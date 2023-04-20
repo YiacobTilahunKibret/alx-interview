@@ -1,58 +1,34 @@
 #!/usr/bin/python3
+"""UTF-8 Validation Module
 """
-utf 8 validation module
-"""
-
-
-def num_bytes_required(num):
-    """
-    returns the number of bytes required to represent the number in utf-8
-    """
-    if num <= 127:
-        return 1
-    elif num <= 223:
-        return 2
-    elif num <= 239:
-        return 3
-    return 4
-
-
-def get_next_char_seq(sequence, value):
-    """
-    returns the next bytes in the sequence
-    """
-    num_bytes = num_bytes_required(value)
-    char_seq = []
-    for _ in range(num_bytes):
-        if len(sequence) == 0:
-            return None
-        char = sequence[0]
-        sequence = sequence[1:]
-        char_seq.append(char)
-    return char_seq
-
-
-def is_seq_valid_utf8(sequence):
-    """
-    returns True if the sequence is a valid utf-8 encoding
-    """
-    if len(sequence) == 1:
-        return sequence[0] <= 127
-
-    return all([bin(num >> 6)[2:] == "10" for num in sequence[1:]])
 
 
 def validUTF8(data):
+    """Determines if a given data set represents a valid UTF-8 encoding.
+    Args:
+        data (list): list of integers
+    Returns:
+        bool: True if data is a valid UTF-8 encoding, else return False
     """
-    validates a given data set represents a valid utf-8 encoding
-    the data set contains list of integers
-    """
-    if data is None:
-        return False
+    n_bytes = 0
 
-    while len(data) > 0:
-        seq = get_next_char_seq(data, data[0])
-        if seq is None or not is_seq_valid_utf8(seq):
-            return False
-        data = data[len(seq):]
-    return True
+    for num in data:
+        byte = num & 0xff
+        if n_bytes == 0:
+            mask1 = 1 << 7
+            mask2 = 1 << 6
+            while mask1 & byte:
+                n_bytes += 1
+                mask1 = mask1 >> 1
+                mask2 = mask2 >> 1
+            if n_bytes == 0:
+                continue
+            if n_bytes == 1 or n_bytes > 4:
+                return False
+        else:
+            mask1 = 1 << 7
+            mask2 = 1 << 6
+            if not (byte & mask1 and not (byte & mask2)):
+                return False
+        n_bytes -= 1
+    return n_bytes == 0
